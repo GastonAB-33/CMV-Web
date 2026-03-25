@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CMV - Cristo Manantial de Vida</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --negro: #0a0a0a;
+      --azul: #0044ff;
+      --plateado: #ced4da;
+      --blanco: #ffffff;
+    }
+
+    body { background-color: var(--blanco); font-family: sans-serif; }
+
+    /* NAVBAR RESPONSIVE */
+    .navbar {
+      background-color: var(--negro) !important;
+      border-bottom: 2px solid var(--plateado);
+      padding: 15px;
+    }
+
+    .nav-link {
+      color: white !important;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 1px;
+      transition: 0.3s;
+    }
+
+    .nav-link:hover { color: var(--plateado) !important; }
+
+    /* Ajuste para que el menú no se amontone en móvil */
+    @media (max-width: 991px) {
+      .navbar-collapse {
+        background-color: var(--negro);
+        padding: 20px;
+        border-radius: 0 0 15px 15px;
+        margin-top: 10px;
+      }
+    }
+
+    /* SECCIONES */
+    .pantalla-app { display: none; padding: 60px 20px; }
+    .pantalla-app.active { display: block; animation: fadeIn 0.4s; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* MAPA RESPONSIVE */
+    .map-container {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      padding-top: 56.25%; /* Relación de aspecto 16:9 */
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .map-container iframe {
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      width: 100%; height: 100%;
+    }
+
+    /* BOTONES */
+    .btn-custom {
+      background: linear-gradient(45deg, var(--negro), var(--azul));
+      color: white; border: none; padding: 12px 25px; border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="#" onclick="cambiarSeccion('inicio')">CMV</a>
+      
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navCMV">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navCMV">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" onclick="cambiarSeccion('inicio')">Inicio</a></li>
+          <li class="nav-item"><a class="nav-link" onclick="cambiarSeccion('quienes-somos')">Quiénes Somos</a></li>
+          <li class="nav-item"><a class="nav-link" onclick="cambiarSeccion('noticias')">Noticias</a></li>
+          <li class="nav-item"><a class="nav-link" onclick="cambiarSeccion('radio')">Radio</a></li>
+          <li class="nav-item"><a class="nav-link btn btn-primary text-white px-3 ms-lg-3 mt-2 mt-lg-0" data-bs-toggle="modal" data-bs-target="#modalLogin">LÍDERES</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    
+    <div id="seccion-inicio" class="pantalla-app active text-center">
+      <h1 class="display-3 fw-bold mt-5">CMV</h1>
+      <p class="lead">Cristo Manantial de Vida</p>
+      <button class="btn btn-custom mt-3" onclick="cambiarSeccion('quienes-somos')">CONOCENOS</button>
+    </div>
+
+    <div id="seccion-quienes-somos" class="pantalla-app">
+      <div class="row g-4">
+        <div class="col-12 col-lg-5">
+          <div class="card p-4 h-100 border-start border-4 border-primary">
+            <h3>Nuestra Visión</h3>
+            <p>Ser una fuente de agua de vida para las naciones.</p>
+            <hr>
+            <h3>Sedes</h3>
+            <button class="btn btn-outline-dark w-100 mb-2" onclick="moverMapa('https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3334.341151605335!2d-66.3338561!3d-33.3033285!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95d43ea30232df8d%3A0xe54930193910385e!2sAv.%20Espa%C3%B1a%201565%2C%20D5700%20San%20Luis!5e0!3m2!1ses-419!2sar!4v1710000000000!5m2!1ses-419!2sar')">SEDE CENTRAL</button>
+            <button class="btn btn-outline-dark w-100" onclick="moverMapa('https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3333.3888568600863!2d-66.3023961!3d-33.333306!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95d439970c6791d1%3A0xc682944b2f2119e3!2sLa%20Merced%202405%2C%20San%20Luis!5e0!3m2!1ses-419!2sar!4v1710000000000!5m2!1ses-419!2sar')">SEDE LA MERCED</button>
+          </div>
+        </div>
+        <div class="col-12 col-lg-7">
+          <div class="map-container">
+            <iframe id="mapa-frame" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3334.341151605335!2d-66.3338561!3d-33.3033285!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95d43ea30232df8d%3A0xe54930193910385e!2sAv.%20Espa%C3%B1a%201565%2C%20D5700%20San%20Luis!5e0!3m2!1ses-419!2sar!4v1710000000000!5m2!1ses-419!2sar"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function cambiarSeccion(nombre) {
+      document.querySelectorAll('.pantalla-app').forEach(p => p.classList.remove('active'));
+      document.getElementById('seccion-' + nombre).classList.add('active');
+      
+      // Cerrar el menú automáticamente en celular al hacer clic
+      const navCollapse = document.getElementById('navCMV');
+      const bsCollapse = bootstrap.Collapse.getInstance(navCollapse);
+      if (bsCollapse) bsCollapse.hide();
+      
+      window.scrollTo(0,0);
+    }
+
+    function moverMapa(url) {
+      document.getElementById('mapa-frame').src = url;
+    }
+  </script>
+</body>
+</html>
