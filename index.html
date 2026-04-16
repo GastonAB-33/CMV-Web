@@ -8,6 +8,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;0,700;1,300&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    window.CMV_CONFIG = {
+      RADIO_STREAM_URL: 'https://srv10.streamingradio.ar/8330/stream'
+    };
+  </script>
   <style>
     /* ─── TOKENS ─────────────────────────────── */
     :root {
@@ -347,6 +352,19 @@
     .radio-disc-center { width: 18px; height: 18px; border-radius: 50%; background: var(--ink); }
     .radio-info-name { font-family: var(--font-display); font-size: 1.3rem; font-weight: 600; color: var(--white); }
     .radio-info-live { display: flex; align-items: center; gap: 6px; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); margin-top: 4px; }
+    .radio-status {
+      display: none;
+      margin: 0 0 1.25rem;
+      padding: 0.75rem 0.9rem;
+      border: 1px solid rgba(212,176,106,0.35);
+      background: rgba(212,176,106,0.08);
+      color: var(--gold-lt);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .radio-status.visible { display: block; }
     .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #e74c3c; animation: livePulse 1.5s ease-in-out infinite; }
     @keyframes livePulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(1.4); } }
     .radio-controls { display: flex; align-items: center; justify-content: center; gap: 2rem; margin-bottom: 1.5rem; }
@@ -362,6 +380,7 @@
     .ctrl-btn:hover { color: var(--white); transform: scale(1.06); border-color: var(--gold); background: rgba(184,151,74,0.14); }
     .ctrl-play { width: 56px; height: 56px; border-radius: 50%; background: var(--gold); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s, transform 0.2s, box-shadow 0.2s; font-size: 1.2rem; }
     .ctrl-play:hover { background: var(--gold-lt); transform: scale(1.05); box-shadow: 0 0 24px rgba(184,151,74,0.4); }
+    .ctrl-play:disabled { cursor: not-allowed; opacity: 0.45; transform: none; box-shadow: none; }
     .volume-row { display: flex; align-items: center; gap: 12px; }
     .volume-icon { color: rgba(255,255,255,0.4); font-size: 0.9rem; }
     .vol-slider { flex: 1; -webkit-appearance: none; height: 2px; background: rgba(255,255,255,0.15); border-radius: 2px; outline: none; }
@@ -1167,7 +1186,7 @@
   <div class="radio-wrap">
     <div>
       <p class="radio-eyebrow">Escucha en vivo</p>
-      <h2 class="radio-title">Radio<br>Manantial</h2>
+      <h2 class="radio-title">FM<br>Centro</h2>
       <div class="radio-divider"></div>
       <p class="radio-desc">Tu emisora cristiana las 24 horas. Predicación, alabanza y la Palabra de Dios cuando más lo necesitás.</p>
     </div>
@@ -1176,10 +1195,11 @@
         <div class="radio-visual">
           <div class="radio-disc" id="radioDisc"><div class="radio-disc-center"></div></div>
           <div>
-            <div class="radio-info-name">Radio Manantial</div>
+            <div class="radio-info-name">FM Centro</div>
             <div class="radio-info-live"><div class="live-dot"></div> En vivo · 24hs</div>
           </div>
         </div>
+        <div class="radio-status" id="radioStatus">En mantenimiento. Volvemos pronto.</div>
         <div class="radio-controls">
           <button class="ctrl-btn" onclick="adjustVolume(-0.1)" aria-label="Bajar volumen">-</button>
           <button class="ctrl-play" id="playBtn" onclick="toggleRadio()" aria-label="Reproducir radio">▶</button>
@@ -1191,7 +1211,7 @@
           <span class="volume-icon">🔊</span>
         </div>
         <audio id="audioPlayer" preload="none">
-          <source src="https://srv10.streamingradio.ar:8330/stream" type="audio/mpeg">
+          <source src="https://srv10.streamingradio.ar/8330/stream" type="audio/mpeg">
         </audio>
       </div>
     </div>
@@ -1364,7 +1384,20 @@
   }
 
   /* Radio */
-  var RADIO_STREAM_URL = 'https://srv10.streamingradio.ar:8330/stream';
+  var RADIO_STREAM_URL = (window.CMV_CONFIG && window.CMV_CONFIG.RADIO_STREAM_URL)
+    ? window.CMV_CONFIG.RADIO_STREAM_URL
+    : 'https://srv10.streamingradio.ar/8330/stream';
+  var radioProbeInFlight = false;
+  var radioProbeTimer = null;
+  var radioMaintenanceMode = false;
+
+  function setRadioMaintenanceMode(active) {
+    var notice = document.getElementById('radioStatus');
+    var playBtn = document.getElementById('playBtn');
+    radioMaintenanceMode = active;
+    if (notice) notice.classList.toggle('visible', active);
+    if (playBtn) playBtn.disabled = active;
+  }
 
   function updateRadioUI(playing) {
     var btn = document.getElementById('playBtn');
@@ -1387,21 +1420,49 @@
     if (!audio) return;
     audio.src = RADIO_STREAM_URL;
     setVolume(slider ? slider.value : 0.8);
-    audio.addEventListener('play', function() { updateRadioUI(true); });
+    audio.addEventListener('play', function() {
+      updateRadioUI(true);
+      setRadioMaintenanceMode(false);
+    });
+    audio.addEventListener('playing', function() { setRadioMaintenanceMode(false); });
+    audio.addEventListener('canplay', function() { setRadioMaintenanceMode(false); });
     audio.addEventListener('pause', function() { updateRadioUI(false); });
     audio.addEventListener('ended', function() { updateRadioUI(false); });
-    audio.addEventListener('error', function() { updateRadioUI(false); });
+    audio.addEventListener('error', function() {
+      updateRadioUI(false);
+      setRadioMaintenanceMode(true);
+      scheduleRadioProbe(15000);
+    });
+    audio.addEventListener('stalled', function() {
+      if (!isPlaying) return;
+      updateRadioUI(false);
+      setRadioMaintenanceMode(true);
+      scheduleRadioProbe(15000);
+    });
+    probeRadioStream();
+    scheduleRadioProbe(45000);
   }
 
   function toggleRadio() {
     var audio = document.getElementById('audioPlayer');
+    if (radioMaintenanceMode) {
+      probeRadioStream();
+      return;
+    }
     if (isPlaying) {
       audio.pause();
       updateRadioUI(false);
     } else {
       audio.play()
-        .then(function() { updateRadioUI(true); })
-        .catch(function() { updateRadioUI(false); });
+        .then(function() {
+          updateRadioUI(true);
+          setRadioMaintenanceMode(false);
+        })
+        .catch(function() {
+          updateRadioUI(false);
+          setRadioMaintenanceMode(true);
+          scheduleRadioProbe(15000);
+        });
     }
   }
   function setVolume(v) {
@@ -1418,6 +1479,39 @@
     var current = slider ? parseFloat(slider.value) : 0.8;
     if (isNaN(current)) current = 0.8;
     setVolume(current + delta);
+  }
+
+  function probeRadioStream() {
+    if (radioProbeInFlight || isPlaying) return;
+    radioProbeInFlight = true;
+
+    var probe = document.createElement('audio');
+    var finished = false;
+    var probeUrl = RADIO_STREAM_URL + (RADIO_STREAM_URL.indexOf('?') === -1 ? '?' : '&') + 'probe=' + Date.now();
+
+    function finishProbe(isAvailable) {
+      if (finished) return;
+      finished = true;
+      radioProbeInFlight = false;
+      setRadioMaintenanceMode(!isAvailable);
+      scheduleRadioProbe(45000);
+      probe.src = '';
+      try { probe.load(); } catch (e) {}
+    }
+
+    probe.preload = 'metadata';
+    probe.src = probeUrl;
+    probe.addEventListener('loadedmetadata', function() { finishProbe(true); }, { once: true });
+    probe.addEventListener('canplay', function() { finishProbe(true); }, { once: true });
+    probe.addEventListener('error', function() { finishProbe(false); }, { once: true });
+    probe.addEventListener('stalled', function() { finishProbe(false); }, { once: true });
+    setTimeout(function() { finishProbe(false); }, 8000);
+    try { probe.load(); } catch (e) { finishProbe(false); }
+  }
+
+  function scheduleRadioProbe(delay) {
+    clearTimeout(radioProbeTimer);
+    radioProbeTimer = setTimeout(probeRadioStream, delay);
   }
 
   /* Modal Login */
