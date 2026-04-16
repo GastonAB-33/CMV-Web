@@ -350,8 +350,16 @@
     .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #e74c3c; animation: livePulse 1.5s ease-in-out infinite; }
     @keyframes livePulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(1.4); } }
     .radio-controls { display: flex; align-items: center; justify-content: center; gap: 2rem; margin-bottom: 1.5rem; }
-    .ctrl-btn { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.1rem; cursor: pointer; transition: color 0.2s, transform 0.2s; }
-    .ctrl-btn:hover { color: var(--white); transform: scale(1.1); }
+    .ctrl-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.8);
+      font-size: 1rem; font-weight: 700; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: color 0.2s, transform 0.2s, border-color 0.2s, background 0.2s;
+    }
+    .ctrl-btn:hover { color: var(--white); transform: scale(1.06); border-color: var(--gold); background: rgba(184,151,74,0.14); }
     .ctrl-play { width: 56px; height: 56px; border-radius: 50%; background: var(--gold); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s, transform 0.2s, box-shadow 0.2s; font-size: 1.2rem; }
     .ctrl-play:hover { background: var(--gold-lt); transform: scale(1.05); box-shadow: 0 0 24px rgba(184,151,74,0.4); }
     .volume-row { display: flex; align-items: center; gap: 12px; }
@@ -1173,16 +1181,18 @@
           </div>
         </div>
         <div class="radio-controls">
-          <button class="ctrl-btn">⏮</button>
-          <button class="ctrl-play" id="playBtn" onclick="toggleRadio()">▶</button>
-          <button class="ctrl-btn">⏭</button>
+          <button class="ctrl-btn" onclick="adjustVolume(-0.1)" aria-label="Bajar volumen">-</button>
+          <button class="ctrl-play" id="playBtn" onclick="toggleRadio()" aria-label="Reproducir radio">▶</button>
+          <button class="ctrl-btn" onclick="adjustVolume(0.1)" aria-label="Subir volumen">+</button>
         </div>
         <div class="volume-row">
           <span class="volume-icon">🔈</span>
           <input type="range" class="vol-slider" id="volSlider" min="0" max="1" step="0.05" value="0.8" oninput="setVolume(this.value)">
           <span class="volume-icon">🔊</span>
         </div>
-        <audio id="audioPlayer"><source src="URL_DE_TU_STREAMING" type="audio/mpeg"></audio>
+        <audio id="audioPlayer" preload="none">
+          <source src="https://srv10.streamingradio.ar:8330/stream" type="audio/mpeg">
+        </audio>
       </div>
     </div>
   </div>
@@ -1337,6 +1347,8 @@
       document.documentElement.scrollTop = 0;
     }
     actualizarNavbar(nombre);
+    var darkSections = { radio: true, predicas: true, jovenes: true };
+    document.body.style.background = darkSections[nombre] ? 'var(--ink)' : 'var(--cream)';
     if (nombre === 'predicas') cargarPredicas();
   }
 
@@ -1352,18 +1364,61 @@
   }
 
   /* Radio */
-  function toggleRadio() {
-    var audio = document.getElementById('audioPlayer');
+  var RADIO_STREAM_URL = 'https://srv10.streamingradio.ar:8330/stream';
+
+  function updateRadioUI(playing) {
     var btn = document.getElementById('playBtn');
     var disc = document.getElementById('radioDisc');
-    if (isPlaying) {
-      audio.pause(); btn.innerHTML = '▶'; disc.classList.remove('playing'); isPlaying = false;
+    isPlaying = playing;
+    if (playing) {
+      btn.innerHTML = '&#9208;';
+      btn.setAttribute('aria-label', 'Pausar radio');
+      disc.classList.add('playing');
     } else {
-      audio.play().catch(function() {});
-      btn.innerHTML = '⏸'; disc.classList.add('playing'); isPlaying = true;
+      btn.innerHTML = '&#9654;';
+      btn.setAttribute('aria-label', 'Reproducir radio');
+      disc.classList.remove('playing');
     }
   }
-  function setVolume(v) { document.getElementById('audioPlayer').volume = v; }
+
+  function initRadio() {
+    var audio = document.getElementById('audioPlayer');
+    var slider = document.getElementById('volSlider');
+    if (!audio) return;
+    audio.src = RADIO_STREAM_URL;
+    setVolume(slider ? slider.value : 0.8);
+    audio.addEventListener('play', function() { updateRadioUI(true); });
+    audio.addEventListener('pause', function() { updateRadioUI(false); });
+    audio.addEventListener('ended', function() { updateRadioUI(false); });
+    audio.addEventListener('error', function() { updateRadioUI(false); });
+  }
+
+  function toggleRadio() {
+    var audio = document.getElementById('audioPlayer');
+    if (isPlaying) {
+      audio.pause();
+      updateRadioUI(false);
+    } else {
+      audio.play()
+        .then(function() { updateRadioUI(true); })
+        .catch(function() { updateRadioUI(false); });
+    }
+  }
+  function setVolume(v) {
+    var audio = document.getElementById('audioPlayer');
+    var slider = document.getElementById('volSlider');
+    var value = Math.min(1, Math.max(0, parseFloat(v)));
+    if (isNaN(value)) value = 0.8;
+    audio.volume = value;
+    if (slider) slider.value = value.toFixed(2);
+  }
+
+  function adjustVolume(delta) {
+    var slider = document.getElementById('volSlider');
+    var current = slider ? parseFloat(slider.value) : 0.8;
+    if (isNaN(current)) current = 0.8;
+    setVolume(current + delta);
+  }
 
   /* Modal Login */
   function abrirModalLogin() {
@@ -1635,6 +1690,7 @@
   // Estado inicial
   actualizarNavbar('inicio');
   cargarNoticias();
+  initRadio();
 </script>
 </body>
 </html>

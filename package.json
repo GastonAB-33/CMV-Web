@@ -1,0 +1,11 @@
+{
+  "name": "cmv-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sitio estatico de CMV preparado para correr en el puerto 5175.",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "dev:fix": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$pid5175 = (Get-NetTCPConnection -LocalPort 5175 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty OwningProcess); if ($pid5175) { Stop-Process -Id $pid5175 -Force }; npm run dev\""
+  }
+}
